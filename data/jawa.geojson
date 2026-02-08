@@ -1,0 +1,49 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[106.8456, -6.2088], [106.8456, -6.1088], [106.9456, -6.1088], [106.9456, -6.2088], [106.8456, -6.2088]]]
+      },
+      "properties": {
+        "kota/kab": "Jakarta",
+        "majority": 50
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[112.7521, -7.2575], [112.7521, -7.1575], [112.8521, -7.1575], [112.8521, -7.2575], [112.7521, -7.2575]]]
+      },
+      "properties": {
+        "kota/kab": "Surabaya",
+        "majority": 30
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[110.4171, -7.7956], [110.4171, -7.6956], [110.5171, -7.6956], [110.5171, -7.7956], [110.4171, -7.7956]]]
+      },
+      "properties": {
+        "kota/kab": "Yogyakarta",
+        "majority": 40
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[107.6186, -6.9175], [107.6186, -6.8175], [107.7186, -6.8175], [107.7186, -6.9175], [107.6186, -6.9175]]]
+      },
+      "properties": {
+        "kota/kab": "Bandung",
+        "majority": 60
+      }
+    }
+  ]
+}
