@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PADIS - Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="map-page">
+    <div id="map-container" style="height: 100vh; width: 100vw; position: absolute; top: 0; left: 0;"></div>
+
+    <!-- Floating controls -->
+    <div class="map-controls">
+        <div class="control-panel">
+            <h3><i class="fas fa-layer-group"></i> Map Layers</h3>
+            <div class="layer-controls">
+                <label><input type="checkbox" id="flood-layer" checked> Flood Risk Areas</label>
+                <label><input type="checkbox" id="drought-layer"> Drought Risk Areas</label>
+                <label><input type="checkbox" id="loss-data-layer" checked> Loss Data Overlay</label>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <h3><i class="fas fa-info-circle"></i> Map Legend</h3>
+            <ul class="legend">
+                <li><span class="legend-color" style="background-color: #ff0000;"></span> High Loss Areas</li>
+                <li><span class="legend-color" style="background-color: #ffff00;"></span> Medium Loss Areas</li>
+                <li><span class="legend-color" style="background-color: #00ff00;"></span> Low Loss Areas</li>
+            </ul>
+        </div>
+
+        <div class="control-panel">
+            <h3><i class="fas fa-map"></i> Basemap</h3>
+            <div class="layer-controls">
+                <label><input type="radio" name="basemap" value="osm" checked> OpenStreetMap</label>
+                <label><input type="radio" name="basemap" value="none"> No Basemap</label>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <h3><i class="fas fa-search-minus"></i> View Controls</h3>
+            <button id="reset-view-btn" class="btn small-btn">Reset View</button>
+        </div>
+    </div>
+
+    <!-- Back to Dashboard Button -->
+    <div class="control-panel back-panel">
+        <a href="index.html#overview" class="btn small-btn back-btn"><i class="fas fa-arrow-left"></i> Back to PADIS</a>
+    </div>
+
+    <!-- Map Filters on the left -->
+    <div class="map-filters">
+        <div class="control-panel">
+            <h3><i class="fas fa-filter"></i> Map Filters</h3>
+            <div class="filter-controls">
+                <div class="filter-item">
+                    <label for="kabupaten-search">Kabupaten/Kota:</label>
+                    <div class="search-bar-container">
+                        <input type="text" id="kabupaten-search" class="search-input" placeholder="Search Regency/City" list="kabupaten-list">
+                        <i class="search-icon fas fa-search"></i>
+                    </div>
+                    <datalist id="kabupaten-list">
+                        <option value="Jakarta">
+                        <option value="Bandung">
+                        <option value="Surabaya">
+                        <option value="Yogyakarta">
+                        <option value="Semarang">
+                    </datalist>
+                </div>
+
+                <div class="filter-item">
+                    <label for="hazard-select">Hazard:</label>
+                    <select id="hazard-select" class="search-input">
+                        <option value="">Select Hazard</option>
+                        <option value="flood">Flood</option>
+                        <option value="drought">Drought</option>
+                        <option value="multi-hazard">Multi-Hazard</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label for="scenario-select">Scenario:</label>
+                    <select id="scenario-select" class="search-input">
+                        <option value="">Select Scenario</option>
+                        <option value="climate">Climate</option>
+                        <option value="non-climate">Non-Climate</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label for="return-period-select">Return Period:</label>
+                    <select id="return-period-select" class="search-input">
+                        <option value="">Select Return Period</option>
+                        <option value="25">25 years</option>
+                        <option value="50">50 years</option>
+                        <option value="100">100 years</option>
+                        <option value="250">250 years</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map-container').setView([-7.7956, 110.3695], 4); // Centered on Java Island
+
+        let basemapLayer = null;
+        let geoJsonLayer = null;
+
+        // Function to add or remove basemap
+        function updateBasemap() {
+            const selectedBasemap = document.querySelector('input[name="basemap"]:checked').value;
+            if (basemapLayer) {
+                map.removeLayer(basemapLayer);
+                basemapLayer = null;
+            }
+            if (selectedBasemap === 'osm') {
+                basemapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+            }
+            // For 'none', do nothing (no basemap)
+        }
+
+        // Add event listeners for basemap radio buttons
+        document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+            radio.addEventListener('change', updateBasemap);
+        });
+
+        // Initialize with default basemap
+        updateBasemap();
+
+        // Reset view button
+        document.getElementById('reset-view-btn').addEventListener('click', function() {
+            if (geoJsonLayer) {
+                map.fitBounds(geoJsonLayer.getBounds(), {padding: [20, 20]});
+            } else {
+                map.setView([-7.7956, 110.3695], 4);
+            }
+        });
+
+        // Load GeoJSON data if available
+        fetch('data/jawa-loss-prototipe.geojson')
+            .then(response => {
+                console.log('Fetch response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('GeoJSON data loaded, features count:', data.features.length);
+                geoJsonLayer = L.geoJSON(data, {
+                    onEachFeature: function(feature, layer) {
+                        const loss = feature.properties._majority;
+                        const rupiahValue = feature.properties.VALUE || feature.properties._majority;
+                        const rupiah = "Rp " + (rupiahValue * 1000000000).toLocaleString('id-ID');
+                        let color;
+                        if (loss < 1) {
+                            color = '#00ff00';
+                        } else if (loss < 5) {
+                            color = '#ffff00';
+                        } else {
+                            color = '#ff0000';
+                        }
+                        const originalStyle = {
+                            color: color,
+                            weight: 2,
+                            opacity: 0.7,
+                            fillOpacity: 0.5
+                        };
+                        layer.setStyle(originalStyle);
+                        layer.originalStyle = originalStyle;
+                        const popupContent = `
+                            <div style="font-family: Arial, sans-serif; padding: 10px; max-width: 200px;">
+                                <h3 style="margin: 0 0 10px 0; color: #333; font-size: 16px;">${feature.properties.NAMOBJ}</h3>
+                                <p style="margin: 0 0 10px 0; font-size: 14px;">Loss: <strong style="color: ${color};">${rupiah}</strong></p>
+                                <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden;">
+                                    <div style="background: ${color}; height: 100%; width: ${Math.min(loss * 2, 100)}%;"></div>
+                                </div>
+                            </div>
+                        `;
+                        layer.bindPopup(popupContent);
+                        layer.on('mouseover', function(e) {
+                            this.setStyle({
+                                weight: 5,
+                                color: '#666',
+                                fillOpacity: 0.7
+                            });
+                        });
+                        layer.on('mouseout', function(e) {
+                            this.setStyle(this.originalStyle);
+                        });
+                        layer.on('click', function(e) {
+                            map.fitBounds(e.target.getBounds());
+                        });
+                    }
+                }).addTo(map);
+                console.log('Layer added to map');
+                const bounds = geoJsonLayer.getBounds();
+                console.log('Layer bounds:', bounds);
+                map.fitBounds(bounds);
+                console.log('Map zoomed to bounds');
+            })
+            .catch(error => console.log('GeoJSON not loaded:', error));
+    </script>
+</body>
+<footer class="map-footer">
+    © 2026 PADIS. All rights reserved.
+</footer>
+</html>
